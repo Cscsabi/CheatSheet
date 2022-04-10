@@ -1,0 +1,17 @@
+Campus Fesztivál
+
+1. helyszínek felvétele
+2. helyszínek listája
+3. esemény felvétele (helyszín, esemény_kezdete, esemény_vége, megnevezés, felelős: név, telefon) (egy helyszínen egyszerre csak egy esemény lehet, a helyszínnek léteznie kell)
+4. adott időpontban folyó események listája (időpont): A lista tartalmazza a helyszínt, megnevezést, kezdetet, véget, felelős nevét, telefonszámát
+5. az összes esemény listája helyszínnel, kezdés és befejezési idővel, megnevezéssel, felelőssel, kezdési idő szerint, azon belül a megnevezés szerint növekvően rendezve
+6. jegytípus felvitele (név, ár, érvényesség kezdete, érvényesség vége)
+7. jegytípuslista
+8. új vendég (email, név, szül_dat, nem)
+9. a vendég jegyet vásárol (email, jegytípus) (egy vendég több jegyet vehet)
+10. a vendégek listája
+11. azon vendégek listája, akik adott időpontban jogosultak a rendezvényt látogatni (idopont)
+12. a vendég az eseményt like-olja (email, esemeny) (egy eseményt csak egyszer like-olhat)
+13. az események listája a like darabszámok szerint csökkenően rendezve
+14. a vendég által like-olt események listája (email)
+

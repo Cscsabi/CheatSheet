@@ -1,0 +1,17 @@
+﻿Írjon phython osztályt, amely olyan metódusokat implementál, amely Redisben végez műveleteket a következő problémához: 
+Pizzéria megrendelései
+
+1 Fel tudunk venni pizzát az adatbázisba (név, ár)
+2 a pizzához feltétet vehetünk fel (pizza_azon, feltét). Egy pizzához több feltétünk is lehet. Ezekkel lehet alapvetően megrendelni a pizzát.
+3 a pizza árát módosíthatjuk (pizza_azon, új_ár)
+4 a pizzák listája feltéttel
+5 megrendelést felvétele (idő, amikor bejön; szállítási cím megadása; azonosító)
+6 a megrendeléshez pizza rendelése (megrendelés_azon, pizza_azon, db_szam)
+7 lista arról, hogy a szakácsnak melyik soron következő pizzát kell sütnie: megrendelés_azon, pizza_azon, pizza_név, feltétlista, db
+8 a szakács elkezdi sütni a pizzát (megrendelés_azon, pizza_azon, db)
+9 a sütőben lévő pizzák listája
+10 a pizza kész (megrendelés_azon, pizza_azon, db)
+11 a kész, de még nem kiszállított pizzák listája
+12 a pizza kiszállítása (megrendelés_azon, pizza_azon, db) (nem tároljuk tovább a rendszerben)
+
+Kérek egy osztályt, amely ezeket a metódusokat implementálja, és egy futtató kódot, amivel kipróbálták.
