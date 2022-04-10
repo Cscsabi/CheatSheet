@@ -1,0 +1,1829 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Sep 21 15:01:42 2020
+
+Task: Basic linear regression for simulated data
+Input: slope and intercept parameters, sample size, error std
+Ouput: estimated parameters R2 and plots
+
+Python tools    
+Libraries: numpy, matplotlib, sklearn
+Modules: random, pyplot, linear_model
+Classes: LinearRegression
+
+@author: Márton Ispány
+"""
+
+import numpy as np;   # Numerical Python library
+import matplotlib.pyplot as plt;  # Matlab-like Python module
+from sklearn.linear_model import LinearRegression;  # Class for linear regression
+
+# Default parameters
+n = 1000;  # sample size
+b0 = 3;   # intercept
+b1 = 2;   # slope
+b2 = 2;
+sigma = 1; # error 
+
+# Enter parameters from consol
+user_input = input('Slope of regression line [default:2]: ');
+if len(user_input) != 0 :
+    b2 = np.float64(user_input);
+user_input = input('Slope of regression line [default:2]: ');
+if len(user_input) != 0 :
+    b1 = np.float64(user_input);
+user_input = input('Intercept of regression line [default:3]: ');
+if len(user_input) != 0 :
+    b0 = np.float64(user_input);
+user_input = input('Sample size [default:1000]: ');
+if len(user_input) != 0 :
+    n = np.int64(user_input);
+user_input = input('Error standard deviation [default:1]: ');
+if len(user_input) != 0 :
+    sigma = np.float64(user_input);
+    
+
+#  Generating random sample  
+x = np.random.normal(0, 1, n);   #  standard normally distributed input
+x2 = np.random.normal(5, 1, n);
+eps = np.random.normal(0, sigma, n);  #  random error
+y = b0 + b1*x + eps;   #  regression equation
+# y = 3*x1 + x2 + 2;
+
+# Scatterplot for the first 100 records with regression line 
+n_point = min(100,n);
+plt.figure(1);
+plt.title('Scatterplot of data with regression line');
+plt.xlabel('x input');
+plt.ylabel('y output');
+xmin = min(x)-0.3;
+xmax = max(x)+0.3;
+ymin = b0 + b1*xmin;
+ymax = b0 + b1*xmax;
+plt.scatter(x[0:n_point],y[0:n_point],color="blue");  #  scatterplot of data
+plt.plot([xmin,xmax],[ymin,ymax],color='red');  #  plot of regression line
+plt.show(); 
+
+# Fitting linear regression
+reg = LinearRegression();  # instance of the LinearRegression class
+X = x.reshape(1, -1).T;  # reshaping 1D array to 2D one
+reg.fit(X,y);   #  fitting the model to data
+b0hat = reg.intercept_;  #  estimated intercept
+b1hat = reg.coef_[0];   #  estimated slope
+R2 = reg.score(X,y);   #  R-square for model fitting
+y_pred = reg.predict(X);  #  prediction of the target
+
+# Computing the regression coefficients by using basic numpy
+# Compare estimates below with b0hat and b1hat
+reg_coef = np.ma.polyfit(x, y, 1);  
+
+# Printing the results
+print(f'Estimated slope:{b1hat:6.4f} (True slope:{b1})');
+print(f'Estimated intercept:{b0hat:6.4f} (True intercept:{b0})');
+print(f'R-square for goodness of fit:{R2:6.4f}');
+
+# Scatterplot for data with true and estimated regression line
+plt.figure(2);
+plt.title('Scatterplot of data with regression lines');
+plt.xlabel('x input');
+plt.ylabel('y output');
+xmin = min(x)-0.3;
+xmax = max(x)+0.3;
+ymin = b0 + b1*xmin;
+ymax = b0 + b1*xmax;
+plt.scatter(x[0:n_point],y[0:n_point],color="blue");
+plt.plot([xmin,xmax],[ymin,ymax],color='black');
+ymin = b0hat + b1hat*xmin;
+ymax = b0hat + b1hat*xmax;
+plt.plot([xmin,xmax],[ymin,ymax],color='red');
+plt.show(); 
+
+# Scatterplot for target prediction
+n_point = min(1000,n);
+plt.figure(3);
+plt.title('Scatterplot for prediction');
+plt.xlabel('True target');
+plt.ylabel('Predicted target');
+ymin = min(y)-1;
+ymax = max(y)+1;
+plt.scatter(y[0:n_point],y_pred[0:n_point],color="blue");
+plt.plot([ymin,ymax],[ymin,ymax],color='red');
+plt.show(); 
+
+# End of code
+
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Oct 11 23:10:39 2020
+
+Task: Basic logistic regression for simulated data
+Input: slope and intercept parameters, sample size
+Ouput: estimated parameters R2 and plots
+
+Python tools    
+Libraries: numpy, scipy, matplotlib, sklearn
+Modules: random, special, pyplot, colors, linear_model
+Classes: LogisticRegression
+
+@author: Márton
+"""
+
+import numpy as np;  # Numerical Python library
+import scipy as sp;  # Scientific Python library
+import matplotlib.pyplot as plt;  # Matlab-like Python module
+import matplotlib.colors as clr;  # importing coloring tools from MatPlotLib
+from sklearn.linear_model import LogisticRegression; # Class for logistic regression
+
+
+# Default parameters
+n = 1000;  # sample size
+b0 = 2;   # intercept
+b1 = 3;   # slope
+b2 = -1;
+
+# Enter parameters from consol
+user_input = input('Slope of regression line [default:2]: ');
+if len(user_input) != 0 :
+    b1 = np.float64(user_input);
+user_input = input('Intercept of regression line [default:3]: ');
+if len(user_input) != 0 :
+    b0 = np.float64(user_input);
+user_input = input('Sample size [default:1000]: ');
+if len(user_input) != 0 :
+    n = np.int64(user_input);
+
+#  Generating random sample  
+x = np.random.normal(0, 1, n); #  standard normally distributed input
+x2 = np.random.normal(3, 3, n);
+z = b0 + b1*x;   # regression equation for latent variable
+z2 = b0 + b1*x + b2*x2;
+p = sp.special.expit(z);  # logistic transformation of latent variable using special function module
+y = np.random.binomial(1,p);  # generating of random target from latent probability
+# from latent variable by Bernoulli (Binomial(1,p)) random generator using random module
+
+# Scatterplot for data
+n_point = min(100,n);
+plt.figure(1);
+plt.title('Scatterplot with regression line');
+plt.xlabel('x input variable');
+plt.ylabel('z latent variable');
+xmin = min(x)-0.3;
+xmax = max(x)+0.3;
+zmin = b0 + b1*xmin;
+zmax = b0 + b1*xmax;
+plt.scatter(x[0:n_point],z[0:n_point],color='blue');
+plt.plot([xmin,xmax],[zmin,zmax],color='black');
+plt.show(); 
+
+# The logistic function
+plt.figure(2);
+plt.title('Logistic function');
+plt.xlabel('x');
+plt.ylabel('f(x)');
+res = 0.0001;  #  resolution of the graph
+base = np.arange(-5,5,res);
+plt.scatter(base,sp.special.expit(base),s=5,color="blue");
+plt.show(); 
+
+# Scatterplot for data
+plt.figure(3);
+plt.title('Scatterplot for data with latent probabilities');
+plt.xlabel('x input');
+plt.ylabel('y output');
+colors = ['blue','red'];
+plt.scatter(x,p,color="black");
+plt.scatter(x,y,c=y,cmap=clr.ListedColormap(colors));
+plt.show(); 
+
+# Fitting logistic regression
+logreg = LogisticRegression();  # instance of the LogisticRegression class
+X = x.reshape(1, -1).T;
+X2 = x2.reshape(1, -1).T;
+logreg.fit(X,y);  #  fitting the model to data
+logreg.fit(X2,y); 
+b0hat = logreg.intercept_[0];  #  estimated intercept
+b1hat = logreg.coef_[0,0];  #  estimated slope
+accuracy = logreg.score(X,y);  #  accuracy for model fitting
+accuracy2 = logreg.score(X2,y);
+y_pred_logreg = logreg.predict(X);  #  prediction of the target
+y_pred_logreg2 = logreg.predict(X2);
+p_pred_logreg = logreg.predict_proba(X);  # posterior distribution for the target
+p_pred_logreg2 = logreg.predict_proba(X2);
+
+# Printing the results
+print(f'Estimated slope:{b1hat:6.4f} (True slope:{b1})');
+print(f'Estimated intercept:{b0hat:6.4f} (True intercept:{b0})');
+print(f'Accuracy:{accuracy:6.4f}');
+
+# Scatterplot for latent probabilities
+plt.figure(4);
+n_point = min(1000,n);
+plt.title('Scatterplot for fitting latent probabilities');
+plt.xlabel('p true');
+plt.ylabel('p estimated');
+plt.scatter(p[0:n_point],p_pred_logreg[0:n_point,1],color='blue');
+plt.plot([0,1],[0,1],color='black');
+plt.show(); 
+
+# Computing the latent variable z as decision function: 
+# the predicted target is 1 if y>0 and 0 if y<0
+z_pred = logreg.decision_function(X);
+z_pred2 = logreg.decision_function(X2);
+# Predicition of latent variable z by logit transformation
+# Compare the above values
+z_pred1 = sp.special.logit(p_pred_logreg[:,1]);
+z_pred3 = sp.special.logit(p_pred_logreg2[:,1]);    
+
+# Scatterplot for latent variable z
+plt.figure(5);
+n_point = min(1000,n);
+plt.title('Scatterplot for latent variable');
+plt.xlabel('z true');
+plt.ylabel('z estimated');
+plt.scatter(z[0:n_point],z_pred[0:n_point],color='blue');
+zmin = min(z)-0.3;
+zmax = max(z)+0.3;
+zmin1 = min(z_pred)-0.3;
+zmax1 = max(z_pred)+0.3;
+plt.plot([zmin,zmax],[zmin1,zmax1],color='black');
+plt.show(); 
+
+# End of code
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Sep 28 15:06:05 2020
+
+Task: Replication analysis of basic linear regression
+Results: descriptive stats and statistical graphs showing the randomness of model parameters
+
+Python tools    
+Libraries: numpy, matplotlib, sklearn
+Modules: pyplot, random, linear_model, utils, model_selection
+Classes: LinearRegression
+Functions: normal, sample_without_replacement, hist, train_test_split, cross_validate
+
+@author: Márton Ispány
+"""
+
+import numpy as np;   # importing numerical computing library
+import matplotlib.pyplot as plt;  # importing MATLAB-like plotting framework
+from sklearn.linear_model import LinearRegression;  # importing linear regression class
+from sklearn.utils.random import sample_without_replacement;  #  importing sampling
+from sklearn.model_selection import train_test_split;  # importing splitting
+from sklearn.model_selection import cross_validate; # importing crossvalidation
+
+# Default parameters
+n = 100000;  # sample size
+b0 = 3;   # intercept
+b1 = 2;   # slope
+sig = 1;  # error
+
+# Enter parameters from consol
+user_input = input('Slope of regression line [default:2]: ');
+if len(user_input) != 0 :
+    b1 = np.float64(user_input);
+user_input = input('Intercept of regression line [default:3]: ');
+if len(user_input) != 0 :
+    b0 = np.float64(user_input);
+user_input = input('Sample size [default:100000]: ');
+if len(user_input) != 0 :
+    n = np.int64(user_input);
+user_input = input('Error standard deviation [default:1]: ');
+if len(user_input) != 0 :
+    sigma = np.float64(user_input);
+
+#  Generating random sample  
+x = np.random.normal(0, 1, n);  #  standard normally distributed input
+eps = np.random.normal(0, sig, n);  #  random error
+y = b0 + b1*x + eps;  #  regression equation
+
+# Default replication parameters
+rep = 100;  #  number of replications
+sample_size = 1000;  # sample size
+reg = LinearRegression();  # instance of the LinearRegression class
+b0hat = [];  #  list for intercept
+b1hat = [];  # list for slope
+score = [];  # list for R-squares
+
+for i in range(rep):
+    # random sampling from dataset
+    index = sample_without_replacement(n_population = n, n_samples = sample_size);
+    x_sample = x[index];
+    y_sample = y[index];
+    X_sample = x_sample.reshape(1, -1).T;
+    reg.fit(X_sample,y_sample);
+    b0hat.append(reg.intercept_);
+    b1hat.append(reg.coef_);
+    score.append(reg.score(X_sample,y_sample));
+    
+b0hat_mean = np.mean(b0hat);
+b0hat_std = np.std(b0hat);
+b1hat_mean = np.mean(b1hat);
+b1hat_std = np.std(b1hat);
+score_mean = np.mean(score);
+score_std = np.std(score);
+
+# Printing the results
+print(f'Mean slope:{b1hat_mean:6.4f} (True slope:{b1}) with standard deviation {b1hat_std:6.4f}');
+print(f'Mean intercept:{b0hat_mean:6.4f} (True intercept:{b0}) with standard deviation {b0hat_std:6.4f}');
+print(f'Mean of R-square for goodness of fit:{score_mean:6.4f} (standard deviation: {score_std:6.4f})');
+    
+# Histograms for parameters and scores 
+plt.figure(1);
+n, bins, patches = plt.hist(np.asarray(b1hat), bins=25, color='g', alpha=0.75);
+plt.xlabel('Slope');
+plt.ylabel('Frequency');
+plt.title('Histogram of slope');
+plt.text(b1-2.5*b1hat_std, 17, f'$\mu={b1hat_mean:4.3f},\ \sigma={b1hat_std:4.3f}$');
+plt.xlim(b1-3*b1hat_std, b1+3*b1hat_std);
+plt.grid(True);
+plt.show();
+
+plt.figure(2);
+n, bins, patches = plt.hist(np.asarray(b0hat), bins=25, color='g', alpha=0.75);
+plt.xlabel('Intercept');
+plt.ylabel('Frequency');
+plt.title('Histogram of intercept');
+plt.text(b0-2.5*b1hat_std, 17, f'$\mu={b0hat_mean:4.3f},\ \sigma={b0hat_std:4.3f}$');
+plt.xlim(b0-3*b1hat_std, b0+3*b1hat_std);
+plt.grid(True);
+plt.show();
+
+plt.figure(3);
+n, bins, patches = plt.hist(np.asarray(score), bins=25, color='g', alpha=0.75);
+plt.xlabel('Score');
+plt.ylabel('Frequency');
+plt.title('Histogram of R-square score');
+plt.text(0.77, 8, f'$\mu={score_mean:4.3f},\ \sigma={score_std:4.3f}$');
+plt.xlim(score_mean-3*score_std, score_mean+3*score_std);
+plt.grid(True);
+plt.show();
+
+# Above results clearly demonstrate the dependence of the parameter estimation of the training set
+# As the training set comes from the data warehouse randomly the results of a machine learning process
+# will be random
+
+# Replication analysis for test dataset
+# One training set, one parameter estimation
+# Several test sets, distribution of score value
+score = [];  # list for R-squares of test sets
+# Fitting the model for the first
+n_train = 10000;
+x_sample = x[0:n_train];
+y_sample = y[0:n_train];
+X_sample = x_sample.reshape(1, -1).T;
+reg.fit(X_sample,y_sample);
+b0hat = reg.intercept_;
+b1hat = reg.coef_;
+score_train = reg.score(X_sample,y_sample);
+
+for i in range(rep):
+    # random sampling from dataset
+    index = sample_without_replacement(n_population = n, n_samples = sample_size);
+    x_test = x[index];
+    y_test = y[index];
+    X_test = x_test.reshape(1, -1).T;
+    score.append(reg.score(X_test,y_test));
+    
+score_mean = np.mean(score);
+score_std = np.std(score);
+
+# Printing the results
+print(f'Mean of test R-squares:{score_mean:6.4f} (standard deviation: {score_std:6.4f}), training R-square: {score_train:6.4f}');
+
+# Histogram of test R-square scores with train one as red line
+plt.figure(4);
+n, bins, patches = plt.hist(np.asarray(score), bins=25, color='g', alpha=0.75);
+plt.xlabel('Score');
+plt.ylabel('Frequency');
+plt.title('Histogram of test R-square score');
+plt.text(0.765, 8, f'$\mu={score_mean:4.3f},\ \sigma={score_std:4.3f}$');
+plt.xlim(score_mean-3*score_std, score_mean+3*score_std);
+plt.grid(True);
+plt.vlines(score_train, 0, 14, colors='r')
+plt.show();
+
+# Splitting the dataset for training and test ones
+X_train, X_test, y_train, y_test = train_test_split(x.reshape(1, -1).T,y, test_size=0.3, 
+                                shuffle = True, random_state=2020);
+reg.fit(X_train,y_train);
+b0hat = reg.intercept_;
+b1hat = reg.coef_[0];
+score_train = reg.score(X_train,y_train);
+score_test = reg.score(X_test,y_test);
+
+# Printing the results
+print(f'Estimated slope:{b1hat:6.4f} (True slope:{b1})');
+print(f'Estimated intercept:{b0hat:6.4f} (True intercept:{b0})');
+print(f'Training R-square:{score_train:6.4f}, Test R-square: {score_test:6.4f})');
+
+# Crossvalidation of regression model
+cv_results = cross_validate(reg, x.reshape(1, -1).T, y, cv=10);
+score_mean = cv_results['test_score'].mean();
+score_std = cv_results['test_score'].std();
+
+# Printing the results
+print(f'Mean of R-square in crossvalidation:{score_mean:6.4f} (standard deviation: {score_std:6.4f})');
+  
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb 25 11:05:41 2019
+
+Task: Fitting linear regression model for diabetes dataset
+Results: regression model, prediction and graphical comparisons
+
+Python tools    
+Libraries: numpy, matplotlib, sklearn
+Modules: random, special, pyplot, colors, linear_model
+Classes: LinearRegression
+Functions: load_diabetes, train_test_split
+
+@author: Márton Ispány
+"""
+
+import numpy as np;   # Numerical Python library
+import matplotlib.pyplot as plt;   # Matlab-like Python module
+from sklearn.datasets import load_diabetes;  # importing dataset loader
+from sklearn.datasets import load_linnerud
+from sklearn.model_selection import train_test_split; # importing splitting
+from sklearn.linear_model import LinearRegression;  # importing linear regression class
+
+#diabetes = load_linnerud()
+#linnerud = load_linnerud()
+diabetes = load_diabetes();
+n = diabetes.data.shape[0];
+p = diabetes.data.shape[1];
+
+# Printing the basic parameters
+print(f'Number of records:{n}');
+print(f'Number of attributes:{p}');
+
+# Printing a data value
+# Deafult
+record = 10;
+feature = 2;
+# Enter axis from consol
+user_input = input('X axis [0..441, default:10]: ');
+if len(user_input) != 0 and np.int16(user_input)>=0 and np.int16(user_input)<n :
+    record = np.int16(user_input);
+user_input = input('Y axis [0..9, default:2]: ');
+if len(user_input) != 0 and np.int8(user_input)>=0 and np.int8(user_input)<p :
+    feature = np.int8(user_input); 
+print(diabetes.feature_names[feature],'[',record,']:', diabetes.data[record,feature]); 
+
+# Partitioning into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(diabetes.data, diabetes.target, 
+                                                    test_size=0.2, random_state=2020)
+
+# Fitting linear regression
+reg = LinearRegression();  # instance of the LinearRegression class
+reg.fit(X_train,y_train);   #  fitting the model to data
+intercept = reg.intercept_;  #  intecept (constant) parameter
+coef = reg.coef_;    #  regression coefficients (weights)
+score_train = reg.score(X_train,y_train);   #  R-square for goodness of fit
+score_test = reg.score(X_test,y_test);
+y_test_pred = reg.predict(X_test);   # prediction for test dataset
+
+# Comparison of true and predicted target values  
+plt.figure(1);
+plt.title('Diabetes prediction');
+plt.xlabel('True disease progression');
+plt.ylabel('Predicted disease progression');
+plt.scatter(y_test,y_test_pred,color="blue");
+plt.plot([50,350],[50,350],color='red');
+plt.show(); 
+
+# Prediction for whole dataset
+pred = reg.predict(diabetes.data);  # prediction by sklearn
+pred1 = intercept*np.ones((n))+np.dot(diabetes.data,coef);  # prediction by numpy
+error = diabetes.target-pred1;  # error of prediction
+centered_target = diabetes.target-diabetes.target.mean(); 
+score = reg.score(diabetes.data, diabetes.target);  # computing R-square by sklearn
+score1 = 1-np.dot(error,error)/np.dot(centered_target,centered_target); # computing R-square by numpy
+# Compare the last two value!
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Oct 12 15:27:34 2020
+
+Task: Fitting logistic regression model for breast_cancer dataset
+Results: regression model, prediction and graphical comparisons
+
+Python tools    
+Libraries: numpy, matplotlib, sklearn
+Modules: random, special, pyplot, colors, linear_model
+Classes: LinearRegression
+Functions: load_diabetes, train_test_split
+
+@author: Márton
+"""
+
+import numpy as np;  # Numerical Python library
+import scipy as sp;  # Scientific Python library
+import matplotlib.pyplot as plt;  # importing MATLAB-like plotting framework
+import matplotlib.colors as clr;  # importing coloring tools from MatPlotLib
+from sklearn.datasets import load_breast_cancer;   # importing dataset loader
+from sklearn.model_selection import train_test_split;  # importing splitting
+from sklearn.linear_model import LogisticRegression;  # importing logistic regression class
+
+cancer = load_breast_cancer();
+n = cancer.data.shape[0];
+p = cancer.data.shape[1];
+
+# Printing the basic parameters
+print(f'Number of records:{n}');
+print(f'Number of attributes:{p}');
+
+# Printing a data value
+# Deafult
+record = 10;
+feature = 2;
+# Enter axis from consol
+user_input = input('X axis [0..568, default:10]: ');
+if len(user_input) != 0 and np.int16(user_input)>=0 and np.int16(user_input)<n :
+    record = np.int16(user_input);
+user_input = input('Y axis [0..29, default:2]: ');
+if len(user_input) != 0 and np.int8(user_input)>=0 and np.int8(user_input)<p :
+    feature = np.int8(user_input); 
+print(cancer.feature_names[feature],'[',record,']:', cancer.data[record,feature]); 
+
+# Fitting logistic regression for whole dataset
+logreg = LogisticRegression(solver='liblinear');  # instance of the class
+logreg.fit(cancer.data,cancer.target);  #  fitting the model to data
+intercept = logreg.intercept_[0]; #  intecept (constant) parameter
+weight = logreg.coef_[0,:];   #  regression coefficients (weights)
+score = logreg.score(cancer.data,cancer.target);  # accuracy of the model
+
+# Prediction by scikit-learn
+target_pred = logreg.predict(cancer.data);  
+p_pred = logreg.predict_proba(cancer.data)[:,1];
+# Prediction by numpy
+z = np.dot(cancer.data,weight)+intercept;
+p_pred1 = sp.special.expit(z);
+
+# Visualizing the prediction
+colors = ['blue','red']; # colors for target values 
+fig = plt.figure(1);
+plt.title('Comparing various prediction methods');
+plt.xlabel('Sklearn prediction');
+plt.ylabel('Numpy prediction');
+plt.scatter(p_pred,p_pred1,s=50,c=cancer.target,cmap=clr.ListedColormap(colors));
+plt.show();
+
+# Partitioning for train/test dataset
+test_rate = 0.2;
+X_train, X_test, y_train, y_test = train_test_split(cancer.data,
+        cancer.target, test_size=test_rate, random_state=2020);
+n_train = X_train.shape[0];
+n_test = X_test.shape[0];
+# Printing the basic parameters
+print(f'Number of training records:{n_train}');
+print(f'Number of test records:{n_test}');
+
+# Fitting logistic regression
+logreg1 = LogisticRegression(solver='liblinear');
+logreg1.fit(X_train,y_train);
+intercept1 = logreg1.intercept_[0];
+weight = logreg1.coef_[0,:];
+score_train = logreg1.score(X_train,y_train);
+score_test = logreg1.score(X_test,y_test);
+
+# Prediction of a random test record
+ind = np.random.randint(0,n_test);
+test_record = X_test[ind,:].reshape(1, -1);
+pred_class = logreg1.predict(test_record)[0];
+pred_distr = logreg1.predict_proba(test_record);
+print('Prediction of test record with index',ind,':',pred_class,'/true: ',y_test[ind]);
+print('Prediction of positive class probability:',pred_distr[0,1]);
+
+# Replication analysis of logistic regression model
+rep = 1000;
+score = [];
+logreg = LogisticRegression(solver='liblinear');
+for i in range(rep):
+    X_train, X_test, y_train, y_test = train_test_split(cancer.data,
+        cancer.target, test_size=test_rate);
+    logreg.fit(X_train,y_train);
+    score.append(logreg.score(X_test,y_test));
+
+score_mean = np.mean(score);
+score_std = np.std(score);
+# Printing the results
+print(f'Mean of accuracy:{score_mean}');
+print(f'Standard deviation of accuracy:{score_std}');
+# Histogram for the accuracy
+plt.figure(2);   
+count, bins, ignored = plt.hist(np.array(score),10,density=True);
+plt.plot(bins,1/(score_std*np.sqrt(2*np.pi))*np.exp(-(bins-score_mean)**2/(2*score_std**2)),linewidth=2,color='red');   
+plt.show();
+    
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar 23:34:18 2020
+
+Task: Pricipal Component Analysis (PCA) of Iris data  
+Results: 2D plots 
+
+Python tools    
+Libraries: numpy, matplotlib, seaborn, sklearn
+Modules: pyplot, colors, datasets, feature_selection, decomposition
+Classes: SelectKBest, PCA
+Functions:
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # importing numerical library
+import matplotlib.pyplot as plt;  # importing MATLAB-like plotting framework
+import matplotlib.colors as col;  # importing coloring tools from MatPlotLib
+import seaborn as sns;  # importing the Seaborn library
+from sklearn.datasets import load_iris; # importing Iris dataset
+from sklearn.feature_selection import SelectKBest; # importing feature selection 
+from sklearn.decomposition import PCA;  # importing PCA
+ 
+# loading dataset
+iris = load_iris();
+n = iris.data.shape[0]; # number of records
+p = iris.data.shape[1]; # number of attributes
+k = iris.target_names.shape[0]; # number of target classes
+
+# Printing the basic parameters
+print(f'Number of records:{n}');
+print(f'Number of attributes:{p}');
+print(f'Number of target classes:{k}');
+
+# Scatterplot for two input attributes
+# Default axis
+x_axis = 0;  # x axis attribute (0,1,2,3)
+y_axis = 1;  # y axis attribute (0,1,2,3)
+# Enter axis from consol
+user_input = input('X axis [0..3, default:0]: ');
+if len(user_input) != 0 and np.int8(user_input)>=0 and np.int8(user_input)<=3 :
+    x_axis = np.int8(user_input);
+user_input = input('Y axis [0..3, default:1]: ');
+if len(user_input) != 0 and np.int8(user_input)>=0 and np.int8(user_input)<=3 :
+    y_axis = np.int8(user_input);    
+colors = ['blue','red','green']; # colors for target values: setosa blue, versicolor red, virginica green
+fig = plt.figure(1);
+plt.title('Scatterplot for iris dataset');
+plt.xlabel(iris.feature_names[x_axis]);
+plt.ylabel(iris.feature_names[y_axis]);
+plt.scatter(iris.data[:,x_axis],iris.data[:,y_axis],s=50,c=iris.target,cmap=col.ListedColormap(colors));
+plt.show();
+
+# Scatterplot of the first two most important features
+feature_selection = SelectKBest(k=2);
+feature_selection.fit(iris.data,iris.target);
+scores = feature_selection.scores_;
+features = feature_selection.transform(iris.data);
+mask = feature_selection.get_support();
+feature_indices = [];
+for i in range(p):
+    if mask[i] == True : feature_indices.append(i);
+x_axis, y_axis = feature_indices;
+
+print('Importance weight of input attributes')
+for i in range(p):
+    print(iris.feature_names[i],': ',scores[i]);
+fig = plt.figure(2);
+plt.title('Scatterplot for iris dataset');
+plt.xlabel(iris.feature_names[x_axis]);
+plt.ylabel(iris.feature_names[y_axis]);
+plt.scatter(iris.data[:,x_axis],iris.data[:,y_axis],s=50,c=iris.target,cmap=col.ListedColormap(colors));
+plt.show();    
+
+# Matrix scatterplot of Iris
+iris_df = load_iris(as_frame=True);
+sns.set(style="ticks");
+sns.pairplot(iris_df.frame, hue="target");
+
+# Full PCA using scikit-learn
+pca = PCA();
+pca.fit(iris.data);
+
+# Visualizing the variance ratio which measures the importance of PCs
+fig = plt.figure(4);
+plt.title('Explained variance ratio plot');
+var_ratio = pca.explained_variance_ratio_;
+x_pos = np.arange(len(var_ratio));
+plt.xticks(x_pos,x_pos+1);
+plt.xlabel('Principal Components');
+plt.ylabel('Variance');
+plt.bar(x_pos,var_ratio, align='center', alpha=0.5);
+plt.show(); 
+
+# Visualizing the cumulative ratio which measures the impact of first n PCs
+fig = plt.figure(5);
+plt.title('Cumulative explained variance ratio plot');
+cum_var_ratio = np.cumsum(var_ratio);
+x_pos = np.arange(len(cum_var_ratio));
+plt.xticks(x_pos,x_pos+1);
+plt.xlabel('Principal Components');
+plt.ylabel('Variance');
+plt.bar(x_pos,cum_var_ratio, align='center', alpha=0.5);
+plt.show(); 
+
+# PCA with limited components
+pca = PCA(n_components=2);
+pca.fit(iris.data);
+iris_pc = pca.transform(iris.data);
+class_mean = np.zeros((k,p));
+for i in range(k):
+    class_ind = [iris.target==i][0].astype(int);
+    class_mean[i,:] = np.average(iris.data, axis=0, weights=class_ind);
+PC_class_mean = pca.transform(class_mean);    
+full_mean = np.reshape(pca.mean_,(1,4));
+PC_mean = pca.transform(full_mean);
+
+fig = plt.figure(6);
+plt.title('Dimension reduction of the Iris data by PCA');
+plt.xlabel('PC1');
+plt.ylabel('PC2');
+plt.scatter(iris_pc[:,0],iris_pc[:,1],s=50,c=iris.target,
+            cmap=col.ListedColormap(colors),label='Datapoints');
+plt.scatter(PC_class_mean[:,0],PC_class_mean[:,1],s=50,marker='P',
+            c=np.arange(k),cmap=col.ListedColormap(colors),label='Class means');
+plt.scatter(PC_mean[:,0],PC_mean[:,1],s=50,c='black',marker='X',label='Overall mean');
+plt.legend();
+plt.show();
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar 23 13:18:03 2020
+
+Principal Component (PC) analysis of digits dataset
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # importing numerical library
+from matplotlib import pyplot as plt;  # importing the MATLAB-like plotting tool
+from sklearn.datasets import load_digits; # importing digit dataset
+from sklearn.model_selection import train_test_split; # importing splitting
+from sklearn.decomposition import PCA;  # importing PCA
+
+
+# loading dataset and computing dimensions
+digits = load_digits();
+n = digits.data.shape[0]; # number of records
+p = digits.data.shape[1]; # number of attributes
+
+# Visualizing digit images 
+# Default index
+image_ind = 10;  #  index of the image
+user_input = input('Image index [0..1796, default:10]: ');
+if len(user_input) != 0 and np.int16(user_input)>=0 and np.int16(user_input)<n :
+    image_ind = np.int16(user_input);
+plt.matshow(15-digits.images[image_ind]);
+plt.show();
+
+# Partitioning into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(digits.data, 
+             digits.target, test_size=0.3, random_state=2020);
+
+# Full PCA on training set
+pca = PCA();
+pca.fit(X_train);
+
+# Visualizing the variance ratio which measures the importance of principal components
+fig = plt.figure(2);
+plt.title('Explained variance ratio plot');
+var_ratio = pca.explained_variance_ratio_;
+x_pos = np.arange(len(var_ratio))+1;
+plt.xlabel('Principal Components');
+plt.ylabel('Variance');
+plt.bar(x_pos,var_ratio, align='center', alpha=0.5);
+plt.show(); 
+
+# Visualizing the cumulative ratio which measures the impact of first n PCs
+fig = plt.figure(3);
+plt.title('Cumulative explained variance ratio plot');
+cum_var_ratio = np.cumsum(var_ratio);
+x_pos = np.arange(len(cum_var_ratio))+1;
+plt.xlabel('Principal Components');
+plt.ylabel('Variance');
+plt.bar(x_pos,cum_var_ratio, align='center', alpha=0.5);
+plt.show(); 
+
+# Visualizing the training set in 2D PC space by using colors for different digits
+PC_train = pca.transform(X_train);
+fig = plt.figure(4);
+plt.title('Scatterplot for training digits dataset');
+plt.xlabel('PC1');
+plt.ylabel('PC2');
+plt.scatter(PC_train[:,0],PC_train[:,1],s=50,c=y_train,cmap = 'tab10');
+plt.show();
+
+# Visualizing the test set in 2D PC space
+PC_test = pca.transform(X_test);
+fig = plt.figure(5);
+plt.title('Scatterplot for test digits dataset');
+plt.xlabel('PC1');
+plt.ylabel('PC2');
+plt.scatter(PC_test[:,0],PC_test[:,1],s=50,c=y_test,cmap = 'tab10');
+plt.show();
+
+# Compare the last two figures! 
+
+# -*- coding: utf-8 -*-
+"""
+Created on Sun March 29 23:02:03 2020
+
+Task: Decision tree analysis of Spambase data reading from URL
+Original data source: https://archive.ics.uci.edu/ml/datasets/spambase
+
+Python tools    
+Libraries: numpy, matplotlib, urllib, sklearn
+Modules: pyplot, request, model_selection, tree
+Classes: DecisionTreeClassifier
+Functions: urlopen, train_test_split, plot_tree
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # importing numerical computing package
+from urllib.request import urlopen;  # importing url handling
+from matplotlib import pyplot as plt;  # importing MATLAB-like plotting framework
+from sklearn.model_selection import train_test_split; # importing model selection tools
+from sklearn.tree import DecisionTreeClassifier, plot_tree;    # importing decision tree tools
+
+# Reading the dataset
+url = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Datasets/spamdata.csv';
+raw_data = urlopen(url);
+data = np.loadtxt(raw_data, skiprows=1, delimiter=";");  # reading numerical data from csv file
+del raw_data;
+
+# Reading attribute names 
+url_names = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Datasets/spambase.names.txt	';
+raw_names = urlopen(url_names);
+attribute_names = [];   #  list for names
+for line in raw_names:
+    name = line.decode('utf-8');  # transforming bytes to string
+    name = name[0:name.index(':')]; # extracting attribute name from string
+    attribute_names.append(name);  # append the name to a list
+del raw_names;
+
+# Defining input and target variables
+X = data[:,0:56];
+y = data[:,57];
+del data;
+input_names = attribute_names[0:56];
+target_names = ['not spam','spam'];
+
+
+# Partitioning into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.3, 
+                                shuffle = True, random_state=2020);
+
+# Initialize the decision tree object
+crit = 'gini';
+depth =4;
+# Instance of decision tree class
+class_tree = DecisionTreeClassifier(criterion=crit,max_depth=depth);
+
+# Fitting decision tree on training dataset
+class_tree.fit(X_train, y_train);
+score_train = class_tree.score(X_train, y_train); # Goodness of tree on training dataset
+score_test = class_tree.score(X_test, y_test); # Goodness of tree on test dataset
+
+# Predicting spam for test data
+y_pred_gini = class_tree.predict(X_test);
+
+# Visualizing decision tree
+fig = plt.figure(1,figsize = (16,10),dpi=100);
+plot_tree(class_tree, feature_names = input_names, 
+               class_names = target_names,
+               filled = True, fontsize = 6);
+# Writing to local repository as C:\\Users\user_name
+fig.savefig('spambase_tree_gini.png');  
+
+# Initialize the decision tree object
+crit = 'entropy';
+depth =4;
+# Instance of decision tree class
+class_tree = DecisionTreeClassifier(criterion=crit,max_depth=depth);
+
+# Fitting decision tree (tree induction + pruning)
+class_tree.fit(X_train, y_train);
+score_entropy = class_tree.score(X_train, y_train); # Goodness of tree on training dataset
+score_test = class_tree.score(X_test, y_test); # Goodness of tree on test dataset
+
+# Predicting spam for test data
+y_pred_entropy = class_tree.predict(X_test);
+
+# Visualizing decision tree
+fig = plt.figure(2,figsize = (16,10),dpi=100);
+plot_tree(class_tree, feature_names = input_names, 
+               class_names = target_names,
+               filled = True, fontsize = 6);
+# Writing to local repository as C:\\Users\user_name 
+fig.savefig('spambase_tree_entropy.png'); 
+
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar 30 07:44:01 2020
+
+Task: Decision tree analysis of Iris data
+
+Python tools    
+Libraries: matplotlib, sklearn
+Modules: pyplot, tree
+Classes: DecisionTreeClassifier
+Functions: plot_tree
+
+@author: Márton Ispány
+"""
+
+from matplotlib import pyplot as plt;  # importing MATLAB-like plotting framework
+from sklearn.datasets import load_iris; # importing iris loader
+from sklearn.tree import DecisionTreeClassifier, plot_tree;    # importing decision tree tools
+from sklearn.datasets import load_breast_cancer;
+
+# Loading the dataset
+#iris = load_iris();
+iris = load_breast_cancer();
+
+# Initialize our decision tree object
+crit = 'entropy';
+depth =3;
+# Instance of decision tree class
+class_tree = DecisionTreeClassifier(criterion=crit,max_depth=depth);
+
+# Fitting decision tree (tree induction + pruning)
+class_tree.fit(iris.data, iris.target);
+score_entropy = class_tree.score(iris.data, iris.target); # Goodness of tree
+
+# Visualizing decision tree
+fig = plt.figure(1,figsize = (12,6),dpi=100);
+plot_tree(class_tree, feature_names = iris.feature_names, 
+               class_names = iris.target_names,
+               filled = True, fontsize = 8);
+fig.savefig('iris_tree_entropy.png'); # Writing to local repository as C:\\Users\user_name 
+
+# Initialize our decision tree object
+crit = 'gini';
+depth =3;
+# Instance of decision tree class
+class_tree = DecisionTreeClassifier(criterion=crit,max_depth=depth);
+
+# Fitting decision tree (tree induction + pruning)
+class_tree.fit(iris.data, iris.target);
+score_gini = class_tree.score(iris.data, iris.target); # Goodness of tree
+
+# Visualizing decision tree
+fig = plt.figure(1,figsize = (12,6),dpi=100);
+plot_tree(class_tree, feature_names = iris.feature_names, 
+               class_names = iris.target_names,
+               filled = True, fontsize = 8);
+fig.savefig('iris_tree_gini.png'); # Writing to local repository as C:\\Users\user_name 
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Apr 06 09:36:05 2020
+
+Task: Fitting classifiers for Spambase dataset
+Classifiers: logistic regression, naive Bayes, nearest neighbor, neural network
+Original data source: https://archive.ics.uci.edu/ml/datasets/spambase
+
+Python tools    
+Libraries: numpy, matplotlib, urllib, sklearn
+Modules: pyplot, request, linear_model, naive_bayes, neighbors, neural_network, model_selection
+Classes: LogisticRegression, GaussianNB
+Functions: urlopen, train_test_split
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # importing numerical computing package
+from urllib.request import urlopen;  # importing url handling
+from matplotlib import pyplot as plt;  # importing MATLAB-like plotting framework
+import matplotlib.colors as col;  # importing coloring tools from MatPlotLib
+from sklearn.model_selection import train_test_split; # importing splitting
+from sklearn.linear_model import LogisticRegression; #  importing logistic regression classifier
+from sklearn.naive_bayes import GaussianNB; #  importing naive Bayes classifier
+from sklearn.neighbors import KNeighborsClassifier;    # importing nearest neighbor classifier
+from sklearn.neural_network import MLPClassifier; # importing neural network classifier
+
+# Reading the dataset
+url = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Datasets/spamdata.csv';
+raw_data = urlopen(url);
+data = np.loadtxt(raw_data, skiprows=1, delimiter=";");  # reading numerical data from csv file
+del raw_data;
+
+# Reading attribute names 
+url_names = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Datasets/spambase.names.txt	';
+raw_names = urlopen(url_names);
+attribute_names = [];   #  list for names
+for line in raw_names:
+    name = line.decode('utf-8');  # transforming bytes to string
+    name = name[0:name.index(':')]; # extracting attribute name from string
+    attribute_names.append(name);  # append the name to a list
+del raw_names;
+
+# Defining input and target variables
+X = data[:,0:57];
+y = data[:,57];
+del data;
+input_names = attribute_names[0:57];
+target_names = ['not spam','spam'];
+
+
+# Partitioning into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.3, 
+                                shuffle = True, random_state=2020);
+
+# Fitting logistic regression
+logreg_classifier = LogisticRegression(solver='liblinear');
+logreg_classifier.fit(X_train,y_train);
+score_train_logreg = logreg_classifier.score(X_train,y_train);
+score_test_logreg = logreg_classifier.score(X_test,y_test);  #  goodness of fit
+ypred_logreg = logreg_classifier.predict(X_test);   # spam prediction
+yprobab_logreg = logreg_classifier.predict_proba(X_test);  #  prediction probabilities
+
+# Fitting naive Bayes classifier
+naive_bayes_classifier = GaussianNB();
+naive_bayes_classifier.fit(X_train,y_train);
+score_train_naive_bayes = naive_bayes_classifier.score(X_train,y_train);  #  goodness of fit
+score_test_naive_bayes = naive_bayes_classifier.score(X_test,y_test);  #  goodness of fit
+ypred_naive_bayes = naive_bayes_classifier.predict(X_test);  # spam prediction
+yprobab_naive_bayes = naive_bayes_classifier.predict_proba(X_test);  #  prediction probabilities
+
+# Fitting nearest neighbor classifier
+for i in range(2, 25):
+    K = i;  # number of neighbors
+    knn_classifier = KNeighborsClassifier(n_neighbors=K);
+    knn_classifier.fit(X_train,y_train);
+    score_train_knn = knn_classifier.score(X_train,y_train);  #  goodness of fit
+    score_test_knn = knn_classifier.score(X_test,y_test);  #  goodness of fit
+    ypred_knn = knn_classifier.predict(X_test);   # spam prediction
+    yprobab_knn = knn_classifier.predict_proba(X_test);  #  prediction probabilities
+
+# Fitting neural network classifier
+neural_classifier = MLPClassifier(hidden_layer_sizes=(3),activation='logistic',max_iter=500);  #  number of hidden neurons: 5
+neural_classifier.fit(X_train,y_train);
+score_train_neural = neural_classifier.score(X_train,y_train);  #  goodness of fit
+score_test_neural = neural_classifier.score(X_test,y_test);  #  goodness of fit
+ypred_neural = neural_classifier.predict(X_test);   # spam prediction
+yprobab_neural = neural_classifier.predict_proba(X_test);  #  prediction probabilities
+
+#  The best model based on test score is MLP (Multilayer perceptron)
+#  with 93.1%
+
+# Visualization of spam prediction and probabilities using the best model (MLP)
+# Color denotes the class, size denotes the probability
+# Default axis
+x_axis = 5;  # x axis attribute (0..56)
+y_axis = 22;  # y axis attribute (0..56)
+# Enter axis from consol
+user_input = input('X axis [0..56, default:5]: ');
+if len(user_input) != 0 and np.int8(user_input)>=0 and np.int8(user_input)<=56 :
+    x_axis = np.int8(user_input);
+user_input = input('Y axis [0..56, default:22]: ');
+if len(user_input) != 0 and np.int8(user_input)>=0 and np.int8(user_input)<=56 :
+    y_axis = np.int8(user_input);    
+colors = ['blue','red'];  #  colors of spam and not spam
+fig = plt.figure(1);
+plt.title('Scatterplot for training digits dataset');
+plt.xlabel(input_names[x_axis]);
+plt.ylabel(input_names[y_axis]);
+plt.scatter(X_test[:,x_axis],X_test[:,y_axis],s=100*yprobab_neural[0,:],
+            c=ypred_neural,cmap=col.ListedColormap(colors));
+plt.show();
+
+# -*- coding: utf-8 -*-
+"""
+Created on Sun May 10 23:37:40 2020
+
+Task: Fitting classifiers for Digits dataset
+Classifiers: logistic regression, naive Bayes, nearest neighbor, neural network
+
+Python tools    
+Libraries: numpy, matplotlib, urllib, sklearn
+Modules: pyplot, request, linear_model, naive_bayes, model_selection, metrics
+Classes: LogisticRegression, GaussianNB
+Functions: urlopen, train_test_split
+
+@author: Márton Ispány
+"""
+
+from sklearn import datasets as ds; # importing scikit-learn datasets
+from sklearn.model_selection import train_test_split; # importing splitting
+from sklearn.linear_model import LogisticRegression; #  importing logistic regression classifier
+from sklearn.naive_bayes import GaussianNB; #  importing naive Bayes classifier
+from sklearn.neighbors import KNeighborsClassifier;    # importing nearest neighbor classifier
+from sklearn.neural_network import MLPClassifier; # importing neural network classifier
+
+# loading dataset
+digits = ds.load_digits();
+n = digits.data.shape[0];  # number of records
+p = digits.data.shape[1];  # number of attributes
+
+# Partitioning into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(digits.data,digits.target, 
+            test_size=0.3, shuffle = True, random_state=2020);
+
+# Fitting logistic regression
+logreg_classifier = LogisticRegression(solver='liblinear');
+logreg_classifier.fit(X_train,y_train);
+score_train_logreg = logreg_classifier.score(X_train,y_train);  #  goodness of fit
+score_test_logreg = logreg_classifier.score(X_test,y_test);  #  goodness of fit
+ypred_logreg = logreg_classifier.predict(X_test);   # spam prediction
+yprobab_logreg = logreg_classifier.predict_proba(X_test);  #  prediction probabilities
+
+# Fitting naive Bayes classifier
+naive_bayes_classifier = GaussianNB();
+naive_bayes_classifier.fit(X_train,y_train);
+score_train_naive_bayes = naive_bayes_classifier.score(X_train,y_train);
+score_test_naive_bayes = naive_bayes_classifier.score(X_test,y_test);  #  goodness of fit
+ypred_naive_bayes = naive_bayes_classifier.predict(X_test);  # spam prediction
+yprobab_naive_bayes = naive_bayes_classifier.predict_proba(X_test);  #  prediction probabilities
+
+# Fitting nearest neighbor classifier
+K = 5;  # number of neighbors
+knn_classifier = KNeighborsClassifier(n_neighbors=K);
+knn_classifier.fit(X_train,y_train);
+score_train_knn = knn_classifier.score(X_train,y_train);  #  goodness of fit
+score_test_knn = knn_classifier.score(X_test,y_test);  #  goodness of fit
+ypred_knn = knn_classifier.predict(X_test);   # spam prediction
+yprobab_knn = knn_classifier.predict_proba(X_test);  #  prediction probabilities
+
+# Fitting neural network classifier
+neural_classifier = MLPClassifier(hidden_layer_sizes=(16),activation='logistic',solver='lbfgs',max_iter=5000);  #  number of hidden neurons: 16
+neural_classifier.fit(X_train,y_train);
+score_train_neural = neural_classifier.score(X_train,y_train);
+score_test_neural = neural_classifier.score(X_test,y_test);  #  goodness of fit
+ypred_neural = neural_classifier.predict(X_test);   # spam prediction
+yprobab_neural = neural_classifier.predict_proba(X_test);  #  prediction probabilities
+
+#  The best model based on train score is Nearest neighbor with 99.8%
+#  The best model based on test score is Logistic Regression with 97.4%
+
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr 19 09:55:30 2020
+
+Task: Assessing of classifiers fitted for Spambase dataset
+Binary (Binomial) classification problem
+Classifiers: logistic regression, naive Bayes
+Results: confusion matrix, ROC curve, AUC value
+Original data source: https://archive.ics.uci.edu/ml/datasets/spambase
+
+Python tools    
+Libraries: numpy, matplotlib, urllib, sklearn
+Modules: pyplot, request, linear_model, naive_bayes, model_selection, metrics
+Classes: LogisticRegression, GaussianNB
+Functions: urlopen, train_test_split, confusion_matrix, roc_curve, auc
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # importing numerical computing package
+from urllib.request import urlopen;  # importing url handling
+from matplotlib import pyplot as plt;  # importing MATLAB-like plotting framework
+from sklearn.linear_model import LogisticRegression; #  importing logistic regression classifier
+from sklearn.naive_bayes import GaussianNB; #  importing naive Bayes classifier
+from sklearn.model_selection import train_test_split; # importing splitting
+from sklearn.metrics import confusion_matrix, plot_confusion_matrix, roc_curve, auc, plot_roc_curve; #  importing performance metrics
+
+    
+# Reading the dataset
+url = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Datasets/spamdata.csv';
+raw_data = urlopen(url);
+data = np.loadtxt(raw_data, skiprows=1, delimiter=";");  # reading numerical data from csv file
+del raw_data;
+
+# Reading attribute names 
+url_names = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Datasets/spambase.names.txt	';
+raw_names = urlopen(url_names);
+attribute_names = [];   #  list for names
+for line in raw_names:
+    name = line.decode('utf-8');  # transforming bytes to string
+    name = name[0:name.index(':')]; # extracting attribute name from string
+    attribute_names.append(name);  # append the name to a list
+del raw_names;
+
+# Defining input and target variables
+X = data[:,0:56];
+y = data[:,57];
+del data;
+input_names = attribute_names[0:56];
+target_names = ['not spam','spam'];
+
+# Partitioning into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.3, 
+                                shuffle = True, random_state=2020);
+
+# Fitting logistic regression
+logreg_classifier = LogisticRegression(solver='liblinear');
+logreg_classifier.fit(X_train,y_train);
+ypred_logreg = logreg_classifier.predict(X_train);   # spam prediction for train
+accuracy_logreg_train = logreg_classifier.score(X_train,y_train);
+cm_logreg_train = confusion_matrix(y_train, ypred_logreg); # train confusion matrix
+ypred_logreg = logreg_classifier.predict(X_test);   # spam prediction for test
+cm_logreg_test = confusion_matrix(y_test, ypred_logreg); # test confusion matrix
+yprobab_logreg = logreg_classifier.predict_proba(X_test);  #  prediction probabilities
+accuracy_logreg_test = logreg_classifier.score(X_test,y_test);
+
+# Plotting non-normalized confusion matrix
+plot_confusion_matrix(logreg_classifier, X_train, y_train, display_labels = target_names);
+
+plot_confusion_matrix(logreg_classifier, X_test, y_test, display_labels = target_names);
+
+# Fitting naive Bayes classifier
+naive_bayes_classifier = GaussianNB();
+naive_bayes_classifier.fit(X_train,y_train);
+ypred_naive_bayes = naive_bayes_classifier.predict(X_train);  # spam prediction for train
+cm_naive_bayes_train = confusion_matrix(y_train, ypred_naive_bayes); # train confusion matrix
+ypred_naive_bayes = naive_bayes_classifier.predict(X_test);  # spam prediction
+cm_naive_bayes_test = confusion_matrix(y_test, ypred_naive_bayes); # test confusion matrix 
+yprobab_naive_bayes = naive_bayes_classifier.predict_proba(X_test);  #  prediction probabilities
+
+# Plotting non-normalized confusion matrix
+plot_confusion_matrix(naive_bayes_classifier, X_train, y_train, display_labels = target_names);
+
+plot_confusion_matrix(naive_bayes_classifier, X_test, y_test, display_labels = target_names); 
+
+# Plotting ROC curve
+plot_roc_curve(logreg_classifier, X_test, y_test);
+plot_roc_curve(naive_bayes_classifier, X_test, y_test);
+
+fpr_logreg, tpr_logreg, _ = roc_curve(y_test, yprobab_logreg[:,1]);
+roc_auc_logreg = auc(fpr_logreg, tpr_logreg);
+
+fpr_naive_bayes, tpr_naive_bayes, _ = roc_curve(y_test, yprobab_naive_bayes[:,1]);
+roc_auc_naive_bayes = auc(fpr_naive_bayes, tpr_naive_bayes);
+
+plt.figure(7);
+lw = 2;
+plt.plot(fpr_logreg, tpr_logreg, color='red',
+         lw=lw, label='Logistic regression (AUC = %0.2f)' % roc_auc_logreg);
+plt.plot(fpr_naive_bayes, tpr_naive_bayes, color='blue',
+         lw=lw, label='Naive Bayes (AUC = %0.2f)' % roc_auc_naive_bayes);
+plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--');
+plt.xlim([0.0, 1.0]);
+plt.ylim([0.0, 1.05]);
+plt.xlabel('False Positive Rate');
+plt.ylabel('True Positive Rate');
+plt.title('Receiver operating characteristic curve');
+plt.legend(loc="lower right");
+plt.show();
+
+# Another method for visualizing confusion matrix
+
+import itertools;
+#  definition of plotting function
+def plot_cm(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Greens):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
+
+plt.figure(8);
+plot_cm(cm_logreg_train, classes=target_names,
+        title = 'Confusion matrix for training dataset (logistic regression)');
+plt.show();
+
+plt.figure(9);
+plot_cm(cm_logreg_test, classes=target_names,
+   title='Confusion matrix for test dataset (logistic regression)');
+plt.show();
+
+plt.figure(10);
+plot_cm(cm_naive_bayes_train, classes=target_names,
+    title='Confusion matrix for training dataset (naive Bayes)');
+plt.show();
+
+plt.figure(11);
+plot_cm(cm_naive_bayes_test, classes=target_names,
+   title='Confusion matrix for test dataset (naive Bayes)');
+plt.show();
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Apr  1 10:33:53 2019
+
+Task: K-means clustering of Iris dataset
+Input: Iris dataset
+Output: cluster statistics, DB score, cluster plot, SSE and DB curve
+
+Python tools    
+Libraries: numpy, matplotlib, sklearn
+Modules: pyplot, datasets, cluster, metrics, decomposition
+Classes: KMeans, PCA
+Functions: davies_bouldin_score
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # Numerical Python library
+import matplotlib.pyplot as plt;  # Matlab-like Python module
+from sklearn.datasets import load_iris;  # importing data loader
+from sklearn.cluster import KMeans; # Class for K-means clustering
+from sklearn.metrics import davies_bouldin_score;  # function for Davies-Bouldin goodness-of-fit 
+from sklearn.decomposition import PCA; #  Class for Principal Component analysis
+
+
+# Loading dataset
+iris = load_iris();
+
+# Default parameters
+n_c = 2; # number of clusters
+
+# Enter parameters from consol
+user_input = input('Number of clusters [default:2]: ');
+if len(user_input) != 0 :
+    n_c = np.int8(user_input);
+
+# Kmeans clustering
+kmeans = KMeans(n_clusters=n_c, random_state=2020);  # instance of KMeans class
+kmeans.fit(iris.data);   #  fitting the model to data
+iris_labels = kmeans.labels_;  # cluster labels
+iris_centers = kmeans.cluster_centers_;  # centroid of clusters
+sse = kmeans.inertia_;  # sum of squares of error (within sum of squares)
+score = kmeans.score(iris.data);  # negative error
+# both sse and score measure the goodness of clustering
+
+# Davies-Bouldin goodness-of-fit
+DB = davies_bouldin_score(iris.data,iris_labels);
+
+# Printing the results
+print(f'Number of cluster: {n_c}');
+print(f'Within SSE: {sse}');
+print(f'Davies-Bouldin index: {DB}');
+
+
+
+# PCA with limited components
+pca = PCA(n_components=2);
+pca.fit(iris.data);
+iris_pc = pca.transform(iris.data);  #  data coordinates in the PC space
+centers_pc = pca.transform(iris_centers);  # the cluster centroids in the PC space
+
+# Visualizing of clustering in the principal components space
+fig = plt.figure(1);
+plt.title('Clustering of the Iris data after PCA');
+plt.xlabel('PC1');
+plt.ylabel('PC2');
+plt.scatter(iris_pc[:,0],iris_pc[:,1],s=50,c=iris_labels);  # data
+plt.scatter(centers_pc[:,0],centers_pc[:,1],s=200,c='red',marker='X');  # centroids
+plt.legend();
+plt.show();
+
+# Kmeans clustering with K=2
+kmeans = KMeans(n_clusters=2, random_state=2020);  # instance of KMeans class
+kmeans.fit(iris.data);   #  fitting the model to data
+iris_labels = kmeans.labels_;  # cluster labels
+iris_centers = kmeans.cluster_centers_;  # centroid of clusters
+distX = kmeans.transform(iris.data);
+dist_center = kmeans.transform(iris_centers);
+
+# Visualizing of clustering in the distance space
+fig = plt.figure(2);
+plt.title('Iris data in the distance space');
+plt.xlabel('Cluster 1');
+plt.ylabel('Cluster 2');
+plt.scatter(distX[:,0],distX[:,1],s=50,c=iris_labels);  # data
+plt.scatter(dist_center[:,0],dist_center[:,1],s=200,c='red',marker='X');  # centroids
+plt.legend();
+plt.show();
+
+# Finding optimal cluster number
+Max_K = 31;  # maximum cluster number
+SSE = np.zeros((Max_K-2));  #  array for sum of squares errors
+DB = np.zeros((Max_K-2));  # array for Davies Bouldin indeces
+for i in range(Max_K-2):
+    n_c = i+2;
+    kmeans = KMeans(n_clusters=n_c, random_state=2020);
+    kmeans.fit(iris.data);
+    iris_labels = kmeans.labels_;
+    SSE[i] = kmeans.inertia_;
+    DB[i] = davies_bouldin_score(iris.data,iris_labels);
+
+# Visualization of SSE values    
+fig = plt.figure(3);
+plt.title('Sum of squares of error curve');
+plt.xlabel('Number of clusters');
+plt.ylabel('SSE');
+plt.plot(np.arange(2,Max_K),SSE, color='red')
+plt.show();
+
+# Visualization of DB scores
+fig = plt.figure(4);
+plt.title('Davies-Bouldin score curve');
+plt.xlabel('Number of clusters');
+plt.ylabel('DB index');
+plt.plot(np.arange(2,Max_K),DB, color='blue')
+plt.show();
+
+# The local minimum of Davies Bouldin curve gives the optimal cluster number
+
+# End of code
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon May 4 00:00:55 2020
+
+Task: Clustering of Aggregation dataset from the URL
+https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Clustering/
+
+Python tools    
+Libraries: numpy, matplotlib, urllib, sklearn
+Modules: pyplot, request, cluster, metrics
+Classes: KMeans
+Functions: urlopen, davies_bouldin_score
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # Numerical Python library
+from matplotlib import pyplot as plt;  # Matlab-like Python module
+from urllib.request import urlopen;  # importing url handling
+from sklearn.cluster import KMeans;  # importing clustering algorithms
+from sklearn.metrics import davies_bouldin_score;  # function for Davies-Bouldin goodness-of-fit
+
+url = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Clustering/Aggregation.tsv';
+raw_data = urlopen(url);  # opening url
+data = np.loadtxt(raw_data, delimiter="\t");  # loading dataset
+X = data[:,0:2];  #  input attributes
+y = data[:,2];   #  label attribute
+
+# Visualizing of datapoints using label colors
+fig = plt.figure(1);
+plt.title('Scatterplot of datapoints with labels');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=y);
+plt.show();
+
+# Default parameters
+K = 7;
+
+# Enter parameters from consol
+user_input = input('Number of clusters [default:7]: ');
+if len(user_input) != 0 :
+    K = np.int8(user_input);
+
+# K-means clustering with fix K
+kmeans_cluster = KMeans(n_clusters=K, random_state=2020);
+kmeans_cluster.fit(X);   #  fiting cluster model for X
+y_pred = kmeans_cluster.predict(X);   #  predicting cluster label
+sse = kmeans_cluster.inertia_;   # sum of squares of error (within sum of squares)
+centers = kmeans_cluster.cluster_centers_;  # centroid of clusters
+
+# Davies-Bouldin goodness-of-fit
+DB = davies_bouldin_score(X,y_pred);  
+
+# Printing the results
+print(f'Number of cluster: {K}');
+print(f'Within SSE: {sse}');
+print(f'Davies-Bouldin index: {DB}');
+
+# Visualizing of datapoints with cluster labels and centroids
+fig = plt.figure(2);
+plt.title('Scatterplot of datapoints with clusters');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=y_pred);   #  dataponts with cluster label
+plt.scatter(centers[:,0],centers[:,1],s=50,c='red');  #  centroids
+plt.show();
+
+# Finding optimal cluster number
+Max_K = 31;  # maximum cluster number
+SSE = np.zeros((Max_K-2));  #  array for sum of squares errors
+DB = np.zeros((Max_K-2));  # array for Davies Bouldin indeces
+for i in range(Max_K-2):
+    n_c = i+2;
+    kmeans = KMeans(n_clusters=n_c, random_state=2020);
+    kmeans.fit(X);
+    y_pred = kmeans.labels_;
+    SSE[i] = kmeans.inertia_;
+    DB[i] = davies_bouldin_score(X,y_pred);
+
+# Visualization of SSE values     
+fig = plt.figure(3);
+plt.title('Sum of squares of error curve');
+plt.xlabel('Number of clusters');
+plt.ylabel('SSE');
+plt.plot(np.arange(2,Max_K),SSE, color='red')
+plt.show();
+
+# Visualization of DB scores
+fig = plt.figure(4);
+plt.title('Davies-Bouldin score curve');
+plt.xlabel('Number of clusters');
+plt.ylabel('DB index');
+plt.plot(np.arange(2,Max_K),DB, color='blue')
+plt.show();
+
+# The local minimum of Davies Bouldin curve gives the optimal cluster number
+# The optimal cluster numbers are K = 4,6
+
+# K-means clusterings and visualization with fix K
+K = 4;
+kmeans_cluster = KMeans(n_clusters=K, random_state=2020);
+kmeans_cluster.fit(X);
+y_pred = kmeans_cluster.predict(X);
+centers = kmeans_cluster.cluster_centers_;
+
+fig = plt.figure(5);
+plt.title('Scatterplot of datapoints with 4 clusters');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=y_pred);
+plt.scatter(centers[:,0],centers[:,1],s=50,c='red');
+plt.show();
+
+K = 6;
+kmeans_cluster = KMeans(n_clusters=K, random_state=2020);
+kmeans_cluster.fit(X);
+y_pred = kmeans_cluster.predict(X);
+centers = kmeans_cluster.cluster_centers_;
+
+fig = plt.figure(6);
+plt.title('Scatterplot of datapoints with 6 clusters');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=y_pred);
+plt.scatter(centers[:,0],centers[:,1],s=50,c='red');
+plt.show();
+
+# End of code
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon May 4 09:23:04 2020
+
+Task: Advanced clustering (hierarchical and DBSCAN) of Aggregation dataset from the URL
+https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Clustering/
+
+Python tools    
+Libraries: numpy, matplotlib, urllib, sklearn, scipy
+Modules: pyplot, request, cluster, metrics
+Classes: AgglomerativeClustering, DBSCAN
+Functions: urlopen, davies_bouldin_score, contingency_matrix
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # importing numerical computing package
+from urllib.request import urlopen;  # importing url handling
+from matplotlib import pyplot as plt;  # importing the MATLAB-like plotting tool
+from sklearn.cluster import AgglomerativeClustering, DBSCAN;  # importing clustering algorithms
+from sklearn.metrics import davies_bouldin_score; # function for Davies-Bouldin goodness-of-fit
+from sklearn.metrics.cluster import contingency_matrix;  # function for contingency matrix
+from scipy.cluster.hierarchy import dendrogram  # importing clustering visualization
+
+def plot_dendrogram(model, **kwargs):
+    # Create linkage matrix and then plot the dendrogram
+
+    # create the counts of samples under each node
+    counts = np.zeros(model.children_.shape[0])
+    n_samples = len(model.labels_)
+    for i, merge in enumerate(model.children_):
+        current_count = 0
+        for child_idx in merge:
+            if child_idx < n_samples:
+                current_count += 1  # leaf node
+            else:
+                current_count += counts[child_idx - n_samples]
+        counts[i] = current_count
+
+    linkage_matrix = np.column_stack([model.children_, model.distances_,
+                                      counts]).astype(float)
+
+    # Plot the corresponding dendrogram
+    dendrogram(linkage_matrix, **kwargs)
+
+url = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Clustering/Aggregation.tsv';
+raw_data = urlopen(url);  # opening url
+data = np.loadtxt(raw_data, delimiter="\t");  # loading dataset
+X = data[:,0:2];  #  splitting the input attributes
+y = data[:,2];   #  label attribute
+
+# Visualizing datapoints using label colors
+fig = plt.figure(1);
+plt.title('Scatterplot of datapoints with labels');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=y);
+plt.show();
+
+# Visualizing datapoints using label colors
+fig = plt.figure(11);
+plt.title('Scatterplot of datapoints without labels');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50);
+plt.show();
+
+
+# Agglomerative clustering with single linkage method
+link = 'single';  #  linkage method
+# Building the full tree
+single_cluster = AgglomerativeClustering(distance_threshold=0, 
+                            n_clusters=None,linkage=link);
+single_cluster.fit(X);
+
+# Plot the top p levels of the dendrogram
+fig = plt.figure(2);
+plt.title('Hierarchical Clustering Dendrogram (single linkage)');
+plot_dendrogram(single_cluster, truncate_mode='level', p=4);
+plt.xlabel("Number of points in node (or index of point if no parenthesis).");
+plt.show();
+
+# Default parameters
+K = 7;
+
+# Enter parameters from consol
+user_input = input('Number of clusters [default:7]: ');
+if len(user_input) != 0 :
+    K = np.int8(user_input);
+
+# Generating clusters
+single_cluster = AgglomerativeClustering(n_clusters=K,linkage=link);
+single_cluster.fit(X);
+ypred_single = single_cluster.labels_;
+db_single = davies_bouldin_score(X,ypred_single);
+cm_single = contingency_matrix(y,ypred_single);
+
+
+# Visualizing datapoints using cluster label
+fig = plt.figure(3);
+plt.title('Scatterplot of datapoints with single linkage clustering');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=ypred_single);
+plt.show();
+
+# Agglomerative clustering with complete linkage method
+link = 'complete';  #  linkage method
+# Building the full tree
+complete_cluster = AgglomerativeClustering(distance_threshold=0, 
+                            n_clusters=None,linkage=link);
+complete_cluster.fit(X);
+
+# Plot the top p levels of the dendrogram
+fig = plt.figure(4);
+plt.title('Hierarchical Clustering Dendrogram (complete linkage)');
+plot_dendrogram(complete_cluster, truncate_mode='level', p=4);
+plt.xlabel("Number of points in node (or index of point if no parenthesis).");
+plt.show();
+
+# Default parameters
+K = 7;
+
+# Enter parameters from consol
+user_input = input('Number of clusters [default:7]: ');
+if len(user_input) != 0 :
+    K = np.int8(user_input);
+
+# Generating clusters
+complete_cluster = AgglomerativeClustering(n_clusters=K,linkage=link);
+complete_cluster.fit(X);
+ypred_complete = complete_cluster.labels_;
+db_complete = davies_bouldin_score(X,ypred_complete);
+cm_complete = contingency_matrix(y,ypred_complete);
+
+# Visualizing datapoints using cluster label
+fig = plt.figure(5);
+plt.title('Scatterplot of datapoints with complete linkage clustering');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=ypred_complete);
+plt.show();
+
+# Agglomerative clustering with Ward method
+link = 'ward';  #  linkage method
+# Building the full tree
+ward_cluster = AgglomerativeClustering(distance_threshold=0, 
+                            n_clusters=None,linkage=link);
+ward_cluster.fit(X);
+
+# Plot the top p levels of the dendrogram
+fig = plt.figure(6);
+plt.title('Hierarchical Clustering Dendrogram (Ward)');
+plot_dendrogram(ward_cluster, truncate_mode='level', p=4);
+plt.xlabel("Number of points in node (or index of point if no parenthesis).");
+plt.show();
+
+# Default parameters
+K = 7;
+
+# Enter parameters from consol
+user_input = input('Number of clusters [default:7]: ');
+if len(user_input) != 0 :
+    K = np.int8(user_input);
+
+# Generating clusters
+ward_cluster = AgglomerativeClustering(n_clusters=K,linkage=link);
+ward_cluster.fit(X);
+ypred_ward = ward_cluster.labels_;
+db_ward = davies_bouldin_score(X,ypred_ward);
+cm_ward = contingency_matrix(y,ypred_ward);
+
+# Visualizing datapoints using cluster label
+fig = plt.figure(7);
+plt.title('Scatterplot of datapoints with Ward linkage clustering');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=ypred_ward);
+plt.show();
+
+# DBSCAN clustering
+radius = 1.06;   # radius of neighborhood
+inner_points = 5;  #  inner point definition 
+dbscan_cluster = DBSCAN(eps=radius, min_samples=inner_points);
+dbscan_cluster.fit(X);
+ypred_dbscan = dbscan_cluster.labels_;
+cm_dbscan = contingency_matrix(y,ypred_dbscan);
+
+# Visualizing datapoints using cluster label
+fig = plt.figure(8);
+plt.title('Scatterplot of datapoints with DBSCAN');
+plt.xlabel('X1');
+plt.ylabel('X2');
+plt.scatter(X[:,0],X[:,1],s=50,c=ypred_dbscan);
+plt.show();
+
+# The parameters (eps and min_samples) are determined by guessing
+# The best result is DBSCAN which can recover the 7 original cluster
+# more or less precisely 
+# By contingency matrix (cm) the clustering results can also be compared
+# where rows are the true labels, columns are the cluster labels
+
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Dec 6 10:33:05 2021
+
+Task: importing data from url into dataframe with column name
+computing descriptive stats and visualizing
+
+Python tools    
+Libraries: numpy, urllib, pandas, matplotlib
+Modules: pyplot, request, plotting
+Classes:  
+Functions: urlopen, DataFrame, parallel_coordinates, scatter_matrix
+
+@author: Márton Ispány
+"""
+
+import numpy as np;  # importing numerical computing package
+from urllib.request import urlopen;  # importing url handling
+import pandas as pd;  # importing pandas data analysis tool
+from matplotlib import pyplot as plt;  # importing MATLAB-like plotting framework
+
+# Reading the dataset
+url = 'https://arato.inf.unideb.hu/ispany.marton/DataMining/Practice/Datasets/bodyfat.csv';
+raw_data = urlopen(url);
+attribute_names = np.loadtxt(raw_data, max_rows=1, delimiter=",",dtype=np.str);  # reading the first row with attribute names
+data = np.loadtxt(raw_data, delimiter=",");  # reading numerical data from csv file
+del raw_data;
+# Removing unnecessary "s and spaces from names
+for i in range(len(attribute_names)):
+    attribute_names[i] = attribute_names[i].replace('"','');
+    attribute_names[i] = attribute_names[i].replace(' ','');
+
+# Defining dataframes with column names from numpy array
+df = pd.DataFrame(data=data, columns=attribute_names);  #  reading the data into dataframe
+
+# Grouping by age and computing the mean
+mean_by_age = df.groupby(by="Age").mean();
+print(mean_by_age[["Density","Height","Weight"]]);
+
+# Parallel axis graph by Age
+plt.figure(1);
+pd.plotting.parallel_coordinates(df,class_column='Age');
+plt.show();
+
+# Scatter matrix for partial columns
+pd.plotting.scatter_matrix(df[["Density","Height","Weight"]]);
