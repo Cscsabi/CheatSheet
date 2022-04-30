@@ -4,7 +4,7 @@
 
 - `ping $RHOST`
 - `sudo nmap -sS -sV -O -sC $RHOST` esetleg, ha ismerjük (-p PORT)
-- `gobuster dir -u http://$RHOST -w /usr/share/wordlists/dirb/small.txt` vagy `/usr/share/wordlists/dirb/big.txt`
+- `gobuster dir -u http://$RHOST -w /usr/share/wordlists/dirb/common.txt` vagy `/usr/share/wordlists/dirb/big.txt`
   Gobuster helyett lehet dirb-t is használni: `dirb http://$RHOST {megfeleő szólista} (-r)`, ahol a -r kikapcsolja a rekurzív keresést
 
 ## Wordpress esetén:
