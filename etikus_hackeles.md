@@ -10,6 +10,7 @@
 ## Wordpress esetén:
 
 - `hydra -L {filename} -p test $RHOST http-post-form "/wp-login.php:log=^USER^&pwd=^PWD^:Invalid username" -t 30`
+- `hydra -l {username} -P {password_file} $RHOST http-post-form "/wp-login.php:log=^USER^&pwd=^PWD^:The password you entered for the username" -t 30`
 - `wpscan --url http://$RHOST --enumerate u` (regisztrált felhasználók)
 - `wpscan --url http://$RHOST --usernames {username} --passwords {filename}` -(itt lehet használni pl.: usr/share/wordlists/rockyou.txt)
 - Ha kapunk egy hash-t:
