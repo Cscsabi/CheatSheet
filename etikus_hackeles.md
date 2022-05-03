@@ -9,10 +9,12 @@
 
 ## Wordpress esetén:
 
-- `wpscan --url http://$RHOST --userames {filename} --passwords {filename}` -(itt lehet használni pl.: usr/share/wordlists/rockyou.txt)
+- `hydra -L {filename} -p test $RHOST http-post-form "/wp-login.php:log=^USER^&pwd=^PWD^:Invalid username" -t 30`
+- `wpscan --url http://$RHOST --enumerate u` (regisztrált felhasználók)
+- `wpscan --url http://$RHOST --usernames {username} --passwords {filename}` -(itt lehet használni pl.: usr/share/wordlists/rockyou.txt)
 - Ha kapunk egy hash-t:
 - Hash típusának meghatározása: `hash-identifier`
-- Hash feltörése: `john {filename} --format={az előbb meghatározott típus, pl.: raw-md5} --wordlist=/usr/share/wordlists/dirb/rockyou.txt`
+- Hash feltörése: `john {filename} --format={az előbb meghatározott típus, pl.: raw-md5} --wordlist=/usr/share/wordlists/rockyou.txt`
 
 ## Netcat listener készítése:
 
@@ -77,4 +79,9 @@
 - `gpg --decrypt filenév.pgp`
 
 ## Egy bizonyos rendszer sérülékenységeinek keresése:
+
 - [exploit-db](https://www.exploit-db.com/)
+
+## Linux capabilities:
+
+- `getcap -r / 2>/dev/null`
