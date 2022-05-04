@@ -1,0 +1,166 @@
+Miért NoSQL:
+- Nagy adattömegek kezelése nehéz klasszikus adatbázisokban.
+- Az alkalmazásokhoz sokkal kompatibilisebbek a NoSQL adatbázisok.
+- Leegyszerűsödik az adatbázis elérése.
+
+Aggregátum adatmodellek:
+- A kulcs-érték, a dokumentum és az oszlopcsalád adatmodelleket
+együtt aggregátum adatmodelleknek hívjuk, a közös jellemzőik miatt.
+- Az aggregátum kapcsolódó objektumok egy olyan gyűjteménye, amelyeket egy egységként szeretnénk kezelni.
+- Nincs igazán meghatározva, hogyan húzzuk meg az aggregátumok határát (aggregate boundary). 
+- Úgy tudjuk eldönteni, hogy hol legyen a határ, hogy megvizsgáljuk, hogy az adatokat milyen 
+módon fogják használni az alkalmazások. Emiatt az aggregátumhatárokat másképp is meghúzhatjuk.
+- Kulcs-érték adatbázisok: Az aggregátum átlátszatlan az adatbázisban. Az átlátszatlanság 
+előnye az, hogy azt tárolhatunk az aggregátumban amit csak szeretnénk. Az adatbázisnak 
+lehet, hogy van valamilyen méretkorlátozása, de ez több, mint ami a korlátozná a szabadságunkat. 
+- Egy aggregátumot csak a kulcsán keresztül kereshetünk ki. 
+- Dokumentum adatbázisok:
+- Képes látni az aggregátum struktúráját. A dokumentum adatbázis korlátozásokat adhat 
+arra nézve, hogy milyen struktúrákat és típusokat helyezhetünk el egy aggregátumba. Cserébe az 
+elérésnél nagyobb rugalmasságot biztosít. 
+- Lekérdezéseket írhatunk az aggregátum mezői alapján, kinyerhetjük az aggregátumok 
+részeit a teljes aggregátum helyett, és indexeket hozhatunk létre az aggregátum tartalma alapján.
+
+Kulcs-érték: (Redis)
+- A kulcs-érték (key-value) tár egy egyszerű hash tábla, 
+elsősorban akkor használják, amikor az adatbázis 
+minden elérését az elsődleges kulcson keresztül végeznek.
+- Konzisztencia: A konzisztencia csak az egy kulcshoz tartozó műveletekre 
+értelmezhető, mivel a művelet egy get, put, vagy delete egy 
+kulcson. Optimista írást lehet végrehajtani, de nagyon drága 
+megvalósítani, mert az adattár nem tudja megállapítani az 
+adatváltozást. 
+- Tranzakció: A különböző kulcs-érték táraknak különböző 
+tranzakcióspecifikációi vannak. Általában nincs garancia az 
+írásra. Sok adattár sok különböző módon valósítja meg a tranzakciókat.
+- Redis perzisztencia: append-only file.
+- Redis: master-slave replikáció és sharding lehetséges, peer-to-peer nem.
+
+Oszlopcsalád: (Cassandra)
+- A legtöbb adatbázis tárolási alapegysége.
+- Konzisztencia: Amikor a Cassandra egy írást kap, az adatot először a 
+naplóba (commit log) írja, aztán egy memóriabeli struktúrába 
+amit memtable-nek hívnak. Egy írási műveletet sikeresnek 
+tekintjük, ha ki van írva a naplóba és a memtable-be.
+- Tranzakció: Cassandraban az írás atomi sorszinten, amely azt jelenti, 
+hogy egy adott sorkulcshoz az oszlopok beszúrása és 
+módosítása egy egyedülálló írásként lesz tekintve és vagy 
+sikerül vagy nem. Az írásokat először a commit log-ba 
+(naplóba) és a memtables-be írja a rendszer. Az írást akkor 
+tekintjük sikeresnek, ha a naplóba írás és a memtables-be 
+írás sikeres. Ha egy csomópont leáll, a naplót használja a 
+rendszer arra, hogy a változásokat megvalósítsa. 
+- Elérhetőség: A Cassandra-t magas elérhetőségre tervezték, nincs 
+master a klaszterben, ezért mindenki egyenrangú. Egy 
+klaszter elérhetősége növelhető ha a kérések 
+konzisztenciaszintjét csökkentjük. 
+– Az elérhetőséget a (R + W) > N formula irányítja, ahol
+- W azon csomópontok minimum száma, amelyeket sikeresen kell írni, 
+- R azon csomópontok minimum száma, amelyeknek egy írásra sikeresen kell válaszolniuk, 
+- N azon csomópontok száma, amelyek részt vesznek az adatok másolásában. 
+– Az elérhetőséget az R és W értékek változtatásával hangolhatjuk rögzített számú N esetén. 
+
+Gráf: (Neo4J)
+- A gráf adatbázisok lehetővé teszik, hogy egyedeket és az 
+egyedek közötti kapcsolatokat tároljuk.
+- Rekordok között bonyolult kapcsolatok.
+- Szociális hálók
+- Olcsó a csomópontok közti navigálás.
+- Főleg egy gépen futnak.
+- Az éleknek van típusa és több tulajdonsága lehet.
+- Egy szerveren belül az adatok mindig konzisztensek, különösképpen a Neo4j-ben, 
+amely teljesen megfelel az ACID tulajdonságoknak.
+- A Neo4j megfelel az ACID tulajdonságoknak. 
+– Mielőtt valamelyik csomópontot megváltoztatjuk vagy egy meglévő csomóponthoz új 
+kapcsolatokat adunk, egy tranzakciót kell kezdenünk. 
+
+Dokumentum: (MongoDB)
+- A dokumentum adatbázisokban a fő fogalom a 
+dokumentum. A dokumentum tár dokumentumokat 
+tárol és nyer ki, amely lehet XML, JSON, BSON
+(binary JSON), stb. Ezek a dokumentumok önleíró, 
+hierarchikus fa adat struktúrák, amelyek 
+tartalmazhatnak map-eket, kollekciókat és skalár 
+értékeket. A tárolt dokumentumok hasonlóak 
+egymáshoz, de nem kell, hogy teljesen ugyanazok 
+legyenek. A dokumentum adatbázisban egy kulcshoz 
+egy dokumentumot tárolunk. Azaz a dokumentum 
+adatbázisra gondolhatunk úgy, mint egy kulcs-érték 
+adatbázis, ahol az érték vizsgálható.
+- Konzisztencia:  A MongoDB konzisztenciáját replica sets-ek használatával 
+annak a kiválasztásával lehet beállítani, hogy várjunk-e arra, 
+hogy az írások minden slave-re vagy egy megadott számú 
+slave-re átmásolódjanak. Minden írás meghatározhatja azon 
+szerverek számát, amelyeken az írásnak meg kell történnie, 
+mielőtt sikeresként tér vissza.
+- Tranzakció: Az egyszerű dokumentum szintű tranzakciókat atomi 
+tranzakcióként ismerjük. Alapértelmezés szerint minden írást sikeresnek jelent a 
+rendszer.
+- Elérhetőség: A dokumentum adatbázisok adatmásolással próbálják fejleszteni az 
+elérhetőséget, amihez master-slave beállítást használnak. Ugyanaz 
+az adat több csomóponton is elérhető és a kliensek akkor is 
+megkaphatják az adatot, ha az elsődleges csomópont nem működik.
+
+Elosztási modellek:
+- Replikáció -> master-slave, peer-to-peer
+- Sharding
+- Egyedülálló szerver
+
+Konzisztencia:
+- Elveszett módosítás: Martin módosítása után Péter 
+azonnal felülírja az adatelemet, akkor a Martin módosítása 
+elveszett. Konzisztenciahibának látjuk, mert Péter 
+módosítása azon az állapoton hajtódott végre, amire 
+Martin módosított, bár azt várjuk, hogy az eredeti állapoton 
+hajtódjon végre.
+- Inkonzisztens olvasás vagy olvasási-írási konfliktus: Képzeljük 
+el, hogy van egy megrendelésünk, amelyek több tétel van, és 
+szállítási költség tartozik hozzá, amelyet a tételekre 
+vonatkozóan számolnak ki. Ha a megrendeléshez hozzáadunk 
+egy új tételt, akkor újra kell számolni és módosítani kell a 
+szállítási költséget. Egy relációs adatbázisban a szállítási 
+költség és a rendelések külön táblában lennének. Az 
+inkonzisztencia úgy állhat elő, hogy Martin ad egy új sort a 
+megrendeléséhez, majd Péter olvassa a tételeket és a 
+szállítási költséget, végül Martin módosítja a szállítási 
+költséget.
+
+CAP:
+ CAP: konzisztencia (consistency), elérhetőség (availability), és 
+partíciótolerancia (partition tolerance)
+– Az elmélet szerinte csak kettőt lehet megkapni egy 
+rendszerben.
+- Az elérhetőség (availability) különleges jelentése van ebben a 
+környezetben, azt jelenti, hogy ha tudsz beszélni egy 
+csomóponttal a klaszteben, akkor az tud adatot olvasni és írni. 
+- A partíciótolerancia (partition tolerance) azt jelenti, hogy a 
+klaszter túl tud élni olyan problémákat, amikor kommunikációs 
+kiesés miatt a klaszter több partícióra esik szét, és azok nem 
+tudnak egymással kommunikálni (ezt a szituációt úgy ismerik, 
+mint split brain)
+- Ha egy rendszer partíciókból áll, mint az elosztott rendszerek, akkor 
+egyensúlyozni kell a konzisztencia és az elérhetőség között.
+- BASE tulajdonságok: (Basically Available, Soft state, Eventual consistency) 
+– (alapvetően elérhető, lágy állapot, egyszer majd valamikor a jövőben konzisztens)
+
+Sémamentes adatbázisok:
+– A kulcs-érték tár lehetővé teszi, hogy bármilyen adatot 
+tároljunk egy kulcs alatt. 
+– A dokumentum adatbázis hatékonyan végzi ugyanezt, mivel a 
+tárolt dokumentum struktúrájára nincs megszorítás. 
+– Az oszlopcsalád adatbázisok lehetővé teszik, hogy bármilyen 
+adatot bármelyik oszlop alatt tároljunk. 
+– A gráfadatbázisok lehetővé teszi, hogy szabadon adjunk 
+éleket az adatbázishoz, és tulajdonságokat az élekhez és a 
+csomópontokhoz.
+– Egyszerűen azt tárolhatjuk, amire szükségünk van.
+– Lehetővé teszik, hogy egyszerűen módosítsuk az 
+adattárunkat a projektünk előrehaladtával. Ha új dolgot 
+fedezünk fel, egyszerűen hozzáadhatjuk. 
+– Ha rájövünk, hogy valamit nem szükséges tárolnunk, akkor 
+egyszerűen törölhetjük.
+– Egyszerűvé teszik, hogy nemegységes adatokkal (olyan 
+adatokkal, amelyeknél a rekordok más mezőkből épülnek fel) 
+dolgozzuk. Lehetővé teszik, hogy a rekordok pontosan azt 
+tartalmazzák, amire szükségünk van, nem többet és nem 
+kevesebbet.
